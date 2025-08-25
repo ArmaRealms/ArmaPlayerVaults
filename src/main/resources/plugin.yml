@@ -10,7 +10,7 @@ api-version: 1.21.6
 commands:
   pv:
     description: Open a vault.
-    aliases: [vault, chest, playervaults, vc]
+    aliases: [vault, chest, playervaults, vc, bau]
     permission: playervaults.commands.use
   pvdel:
     description: Delete a vault.

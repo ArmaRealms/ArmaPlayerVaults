@@ -48,8 +48,10 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Registry;
+import org.bukkit.block.data.type.Vault;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
@@ -126,13 +128,13 @@ public class PlayerVaults extends JavaPlugin {
         return instance;
     }
 
-    public static void debug(String s, long start) {
+    public static void debug(final String s, final long start) {
         if (DEBUG) {
             instance.getLogger().log(Level.INFO, "{0} took {1}ms", new Object[]{s, (System.currentTimeMillis() - start)});
         }
     }
 
-    public static void debug(String s) {
+    public static void debug(final String s) {
         if (DEBUG) {
             instance.getLogger().log(Level.INFO, s);
         }
@@ -146,9 +148,9 @@ public class PlayerVaults extends JavaPlugin {
             return;
         }
         instance = this;
-        long start = System.currentTimeMillis();
+        final long start = System.currentTimeMillis();
         long time = System.currentTimeMillis();
-        UpdateCheck update = new UpdateCheck("PlayerVaultsX", this.getDescription().getVersion(), this.getServer().getName(), this.getServer().getVersion());
+        final UpdateCheck update = new UpdateCheck("PlayerVaultsX", this.getDescription().getVersion(), this.getServer().getName(), this.getServer().getVersion());
         debug("adventure!", time);
         time = System.currentTimeMillis();
         loadConfig();
@@ -173,7 +175,12 @@ public class PlayerVaults extends JavaPlugin {
         debug("loaded signs", time);
         time = System.currentTimeMillis();
         update.spigotId = "%%__USER__%%";
-        getCommand("pv").setExecutor(new VaultCommand(this));
+        final PluginCommand pv = this.getCommand("pv");
+        if (pv != null) {
+            final VaultCommand vaultCommand = new VaultCommand(this);
+            pv.setExecutor(vaultCommand);
+            pv.setTabCompleter(vaultCommand);
+        }
         getCommand("pvdel").setExecutor(new DeleteCommand(this));
         getCommand("pvconvert").setExecutor(new ConvertCommand(this));
         getCommand("pvsign").setExecutor(new SignCommand(this));
@@ -199,12 +206,12 @@ public class PlayerVaults extends JavaPlugin {
         }.runTaskTimer(this, 20, 20);
 
         this.metrics = new Metrics(this, 6905);
-        Plugin vault = getServer().getPluginManager().getPlugin("Vault");
+        final Plugin vault = getServer().getPluginManager().getPlugin("Vault");
         this.metricsDrillPie("vault", () -> this.metricsPluginInfo(vault));
         if (vault != null) {
             this.metricsDrillPie("vault_econ", () -> {
-                Map<String, Map<String, Integer>> map = new HashMap<>();
-                Map<String, Integer> entry = new HashMap<>();
+                final Map<String, Map<String, Integer>> map = new HashMap<>();
+                final Map<String, Integer> entry = new HashMap<>();
                 entry.put(!this.useVault ? "none" : EconomyOperations.getName(), 1);
                 map.put(isEconomyEnabled() ? "enabled" : "disabled", entry);
                 return map;
@@ -217,11 +224,11 @@ public class PlayerVaults extends JavaPlugin {
                 if (name.equals("CMIEconomy")) {
                     name = "CMI";
                 }
-                Plugin plugin = getServer().getPluginManager().getPlugin(name);
+                final Plugin plugin = getServer().getPluginManager().getPlugin(name);
                 if (plugin != null) {
                     this.metricsDrillPie("vault_econ_plugins", () -> {
-                        Map<String, Map<String, Integer>> map = new HashMap<>();
-                        Map<String, Integer> entry = new HashMap<>();
+                        final Map<String, Map<String, Integer>> map = new HashMap<>();
+                        final Map<String, Integer> entry = new HashMap<>();
                         entry.put(plugin.getDescription().getVersion(), 1);
                         map.put(plugin.getName(), entry);
                         return map;
@@ -231,9 +238,9 @@ public class PlayerVaults extends JavaPlugin {
         }
 
         if (vault != null) {
-            String name = EconomyOperations.getPermsName();
+            final String name = EconomyOperations.getPermsName();
             if (name != null) {
-                Plugin plugin = getServer().getPluginManager().getPlugin(name);
+                final Plugin plugin = getServer().getPluginManager().getPlugin(name);
                 final String version;
                 if (plugin == null) {
                     version = "unknown";
@@ -241,8 +248,8 @@ public class PlayerVaults extends JavaPlugin {
                     version = plugin.getDescription().getVersion();
                 }
                 this.metricsDrillPie("vault_perms", () -> {
-                    Map<String, Map<String, Integer>> map = new HashMap<>();
-                    Map<String, Integer> entry = new HashMap<>();
+                    final Map<String, Map<String, Integer>> map = new HashMap<>();
+                    final Map<String, Integer> entry = new HashMap<>();
                     entry.put(version, 1);
                     map.put(name, entry);
                     return map;
@@ -255,10 +262,10 @@ public class PlayerVaults extends JavaPlugin {
         this.metricsSimplePie("cleanup", () -> getConf().getPurge().isEnabled() ? "enabled" : "disabled");
 
         this.metricsDrillPie("block_items", () -> {
-            Map<String, Map<String, Integer>> map = new HashMap<>();
-            Map<String, Integer> entry = new HashMap<>();
+            final Map<String, Map<String, Integer>> map = new HashMap<>();
+            final Map<String, Integer> entry = new HashMap<>();
             if (getConf().getItemBlocking().isEnabled()) {
-                for (Material material : blockedMats) {
+                for (final Material material : blockedMats) {
                     entry.put(material.toString(), 1);
                 }
             }
@@ -270,20 +277,20 @@ public class PlayerVaults extends JavaPlugin {
         });
 
         try {
-            Field f = Unsafe.class.getDeclaredField("theUnsafe");
+            final Field f = Unsafe.class.getDeclaredField("theUnsafe");
             f.setAccessible(true);
-            Unsafe unsafe = (Unsafe) f.get(null);
+            final Unsafe unsafe = (Unsafe) f.get(null);
 
-            Class<?> clazz = Class.forName(this.getServer().getClass().getPackage().getName() + ".util.CraftNBTTagConfigSerializer");
-            Field field = clazz.getDeclaredField("INTEGER");
+            final Class<?> clazz = Class.forName(this.getServer().getClass().getPackage().getName() + ".util.CraftNBTTagConfigSerializer");
+            final Field field = clazz.getDeclaredField("INTEGER");
 
-            Pattern pattern = (Pattern) unsafe.getObject(clazz, unsafe.staticFieldOffset(field));
+            final Pattern pattern = (Pattern) unsafe.getObject(clazz, unsafe.staticFieldOffset(field));
 
             if (pattern.pattern().equals("[-+]?(?:0|[1-9][0-9]*)?i")) {
                 unsafe.putObject(clazz, unsafe.staticFieldOffset(field), Pattern.compile("[-+]?(?:0|[1-9][0-9]*)i", Pattern.CASE_INSENSITIVE));
                 this.getLogger().info("Patched Spigot item storage bug.");
             }
-        } catch (Exception ignored) {
+        } catch (final Exception ignored) {
             // Don't worry about it.
         }
 
@@ -300,17 +307,17 @@ public class PlayerVaults extends JavaPlugin {
             @Override
             public void run() {
                 try {
-                    URL url = new URL("https://update.plugin.party/check");
-                    HttpURLConnection con = (HttpURLConnection) url.openConnection();
+                    final URL url = new URL("https://update.plugin.party/check");
+                    final HttpURLConnection con = (HttpURLConnection) url.openConnection();
                     con.setRequestMethod("POST");
                     con.setDoOutput(true);
                     con.setRequestProperty("Content-Type", "application/json");
                     con.setRequestProperty("Accept", "application/json");
-                    try (OutputStream out = con.getOutputStream()) {
+                    try (final OutputStream out = con.getOutputStream()) {
                         out.write(PlayerVaults.this.updateCheck.getBytes(StandardCharsets.UTF_8));
                     }
-                    String reply = new BufferedReader(new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8)).lines().collect(Collectors.joining("\n"));
-                    Response response = new Gson().fromJson(reply, Response.class);
+                    final String reply = new BufferedReader(new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8)).lines().collect(Collectors.joining("\n"));
+                    final Response response = new Gson().fromJson(reply, Response.class);
                     if (response.isSuccess()) {
                         if (response.isUpdateAvailable()) {
                             PlayerVaults.this.updateResponse = response;
@@ -328,31 +335,31 @@ public class PlayerVaults extends JavaPlugin {
                             PlayerVaults.this.getLogger().warning("Failed to check for updates: " + response.getMessage());
                         }
                     }
-                } catch (Exception ignored) {
+                } catch (final Exception ignored) {
                 }
             }
         }.runTaskTimerAsynchronously(this, 1, 20 /* ticks */ * 60 /* seconds in a minute */ * 60 /* minutes in an hour*/);
     }
 
-    private void metricsLine(String name, Callable<Integer> callable) {
+    private void metricsLine(final String name, final Callable<Integer> callable) {
         this.metrics.addCustomChart(new Metrics.SingleLineChart(name, callable));
     }
 
-    private void metricsDrillPie(String name, Callable<Map<String, Map<String, Integer>>> callable) {
+    private void metricsDrillPie(final String name, final Callable<Map<String, Map<String, Integer>>> callable) {
         this.metrics.addCustomChart(new Metrics.DrilldownPie(name, callable));
     }
 
-    private void metricsSimplePie(String name, Callable<String> callable) {
+    private void metricsSimplePie(final String name, final Callable<String> callable) {
         this.metrics.addCustomChart(new Metrics.SimplePie(name, callable));
     }
 
-    private Map<String, Map<String, Integer>> metricsPluginInfo(Plugin plugin) {
+    private Map<String, Map<String, Integer>> metricsPluginInfo(final Plugin plugin) {
         return this.metricsInfo(plugin, () -> plugin.getDescription().getVersion());
     }
 
-    private Map<String, Map<String, Integer>> metricsInfo(Object plugin, Supplier<String> versionGetter) {
-        Map<String, Map<String, Integer>> map = new HashMap<>();
-        Map<String, Integer> entry = new HashMap<>();
+    private Map<String, Map<String, Integer>> metricsInfo(final Object plugin, final Supplier<String> versionGetter) {
+        final Map<String, Map<String, Integer>> map = new HashMap<>();
+        final Map<String, Integer> entry = new HashMap<>();
         entry.put(plugin == null ? "nope" : versionGetter.get(), 1);
         map.put(plugin == null ? "absent" : "present", entry);
         return map;
@@ -360,11 +367,11 @@ public class PlayerVaults extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        for (Player player : Bukkit.getOnlinePlayers()) {
+        for (final Player player : Bukkit.getOnlinePlayers()) {
             if (this.inVault.containsKey(player.getUniqueId().toString())) {
-                Inventory inventory = player.getOpenInventory().getTopInventory();
+                final Inventory inventory = player.getOpenInventory().getTopInventory();
                 if (inventory.getViewers().size() == 1) {
-                    VaultViewInfo info = this.inVault.get(player.getUniqueId().toString());
+                    final VaultViewInfo info = this.inVault.get(player.getUniqueId().toString());
                     VaultManager.getInstance().saveVault(inventory, player.getUniqueId().toString(), info.getNumber());
                     this.openInventories.remove(info.toString());
                     // try this to make sure that they can't make further edits if the process hangs.
@@ -383,7 +390,7 @@ public class PlayerVaults extends JavaPlugin {
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+    public boolean onCommand(final CommandSender sender, final Command cmd, final String label, final String[] args) {
         if (cmd.getName().equalsIgnoreCase("pvreload")) {
             reloadConfig();
             loadConfig(); // To update blocked materials.
@@ -394,12 +401,12 @@ public class PlayerVaults extends JavaPlugin {
     }
 
     private void loadConfig() {
-        File configYaml = new File(this.getDataFolder(), "config.yml");
+        final File configYaml = new File(this.getDataFolder(), "config.yml");
         if (!(new File(this.getDataFolder(), "config.conf").exists()) && configYaml.exists()) {
             this.config.setFromConfig(this.getLogger(), this.getConfig());
             try {
                 Files.move(configYaml.toPath(), this.getDataFolder().toPath().resolve("old_unused_config.yml"));
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 this.getLogger().log(Level.SEVERE, "Failed to move config for backup: " + e.getMessage());
                 configYaml.deleteOnExit();
             }
@@ -407,7 +414,7 @@ public class PlayerVaults extends JavaPlugin {
 
         try {
             Loader.loadAndSave("config", this.config);
-        } catch (IOException | IllegalAccessException e) {
+        } catch (final IOException | IllegalAccessException e) {
             this.getLogger().log(Level.SEVERE, "Could not load config.", e);
         }
 
@@ -417,22 +424,22 @@ public class PlayerVaults extends JavaPlugin {
         this.blockWithModelData = false;
         this.blockWithoutModelData = false;
         if (getConf().getItemBlocking().isEnabled()) {
-            for (String s : getConf().getItemBlocking().getList()) {
+            for (final String s : getConf().getItemBlocking().getList()) {
                 if (s.equalsIgnoreCase("BLOCK_ALL_WITH_CUSTOM_MODEL_DATA")) {
                     this.blockWithModelData = true;
                 }
                 if (s.equalsIgnoreCase("BLOCK_ALL_WITHOUT_CUSTOM_MODEL_DATA")) {
                     this.blockWithoutModelData = true;
                 }
-                Material mat = Material.matchMaterial(s);
+                final Material mat = Material.matchMaterial(s);
                 if (mat != null) {
                     blockedMats.add(mat);
                     getLogger().log(Level.INFO, "Added {0} to list of blocked materials.", mat.name());
                 }
             }
             boolean badEnch = false;
-            for (String s : getConf().getItemBlocking().getEnchantmentsBlocked()) {
-                Enchantment ench = Registry.ENCHANTMENT.match(s);
+            for (final String s : getConf().getItemBlocking().getEnchantmentsBlocked()) {
+                final Enchantment ench = Registry.ENCHANTMENT.match(s);
                 if (ench != null) {
                     blockedEnchs.add(ench);
                 } else {
@@ -446,33 +453,33 @@ public class PlayerVaults extends JavaPlugin {
         }
         try {
             ItemMeta.class.getMethod("hasCustomModelData");
-        } catch (NoSuchMethodException e) {
+        } catch (final NoSuchMethodException e) {
             this.blockWithModelData = false;
             this.blockWithoutModelData = false;
         }
 
-        File lang = new File(this.getDataFolder(), "lang");
+        final File lang = new File(this.getDataFolder(), "lang");
         if (lang.exists()) {
             this.getLogger().warning("There is no clean way for us to migrate your old lang data.");
             this.getLogger().warning("If you made any customizations, or used another language, you need to migrate the info to the new format in lang.conf");
             try {
                 Files.move(lang.toPath(), lang.getParentFile().toPath().resolve("old_unused_lang"));
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 this.getLogger().log(Level.SEVERE, "Failed to rename lang folder as it is no longer used: " + e.getMessage());
                 configYaml.deleteOnExit();
             }
         }
 
         try {
-            Path langPath = this.getDataFolder().toPath().resolve("lang.conf");
+            final Path langPath = this.getDataFolder().toPath().resolve("lang.conf");
             if (Files.exists(langPath)) {
-                List<String> lines = Files.readAllLines(langPath);
-                List<String> updatedLines = new ArrayList<>();
+                final List<String> lines = Files.readAllLines(langPath);
+                final List<String> updatedLines = new ArrayList<>();
                 lines.forEach(line -> updatedLines.add(line.replaceAll("\\{(vault|player|price|count|item)}", "<$1>")));
                 Files.write(langPath, updatedLines.stream().collect(Collectors.joining("\n")).getBytes());
             }
             Loader.loadAndSave("lang", this.translation);
-        } catch (IOException | IllegalAccessException e) {
+        } catch (final IOException | IllegalAccessException e) {
             this.getLogger().log(Level.SEVERE, "Could not load lang.", e);
         }
         this.translation.cleanupMiniMessup();
@@ -483,11 +490,11 @@ public class PlayerVaults extends JavaPlugin {
     }
 
     private void loadSigns() {
-        File signs = new File(getDataFolder(), "signs.yml");
+        final File signs = new File(getDataFolder(), "signs.yml");
         if (!signs.exists()) {
             try {
                 signs.createNewFile();
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 getLogger().severe("PlayerVaults has encountered a fatal error trying to load the signs file.");
                 getLogger().severe("Please report this error on GitHub @ https://github.com/drtshock/PlayerVaults/");
                 e.printStackTrace();
@@ -504,7 +511,7 @@ public class PlayerVaults extends JavaPlugin {
         if (!signsFile.exists()) loadSigns();
         try {
             signs.load(signsFile);
-        } catch (IOException | InvalidConfigurationException e) {
+        } catch (final IOException | InvalidConfigurationException e) {
             getLogger().severe("PlayerVaults has encountered a fatal error trying to reload the signs file.");
             getLogger().severe("Please report this error on GitHub @ https://github.com/drtshock/PlayerVaults/");
             e.printStackTrace();
@@ -535,7 +542,7 @@ public class PlayerVaults extends JavaPlugin {
         saveQueued = false;
         try {
             signs.save(this.signsFile);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             getLogger().severe("PlayerVaults has encountered an error trying to save the signs file.");
             getLogger().severe("Please report this error on GitHub @ https://github.com/drtshock/PlayerVaults/");
             e.printStackTrace();
@@ -593,19 +600,19 @@ public class PlayerVaults extends JavaPlugin {
      * @param potentialUUID - potential UUID to try to get the name for.
      * @return the player's name if we can find it, otherwise return what got passed to us.
      */
-    public String getNameIfPlayer(String potentialUUID) {
-        UUID uuid;
+    public String getNameIfPlayer(final String potentialUUID) {
+        final UUID uuid;
         try {
             uuid = UUID.fromString(potentialUUID);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             return potentialUUID;
         }
 
-        OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(uuid);
+        final OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(uuid);
         return offlinePlayer != null ? offlinePlayer.getName() : potentialUUID;
     }
 
-    public boolean isBlockedMaterial(Material mat) {
+    public boolean isBlockedMaterial(final Material mat) {
         return blockedMats.contains(mat);
     }
 
@@ -617,8 +624,8 @@ public class PlayerVaults extends JavaPlugin {
         return this.blockWithoutModelData;
     }
 
-    public Set<Enchantment> isEnchantmentBlocked(ItemStack item) {
-        Set<Enchantment> enchantments = new HashSet<>(item.getEnchantments().keySet());
+    public Set<Enchantment> isEnchantmentBlocked(final ItemStack item) {
+        final Set<Enchantment> enchantments = new HashSet<>(item.getEnchantments().keySet());
         enchantments.retainAll(this.blockedEnchs);
         return enchantments;
     }
@@ -637,7 +644,7 @@ public class PlayerVaults extends JavaPlugin {
     }
 
     public int getDefaultVaultRows() {
-        int def = this.config.getDefaultVaultRows();
+        final int def = this.config.getDefaultVaultRows();
         return (def >= 1 && def <= 6) ? def : 6;
     }
 
@@ -645,7 +652,7 @@ public class PlayerVaults extends JavaPlugin {
         return this.getDefaultVaultRows() * 9;
     }
 
-    public boolean isSign(Material mat) {
+    public boolean isSign(final Material mat) {
         return mat.name().toUpperCase().contains("SIGN");
     }
 
@@ -657,7 +664,7 @@ public class PlayerVaults extends JavaPlugin {
         return this.translation;
     }
 
-    public String getVaultTitle(String id) {
+    public String getVaultTitle(final String id) {
         return this.translation.vaultTitle().with("vault", id).getLegacy();
     }
 
@@ -665,9 +672,9 @@ public class PlayerVaults extends JavaPlugin {
         if (this.exceptions.isEmpty()) {
             return null;
         }
-        StringBuilder builder = new StringBuilder();
+        final StringBuilder builder = new StringBuilder();
         boolean more = false;
-        for (String e : this.exceptions) {
+        for (final String e : this.exceptions) {
             if (more) {
                 builder.append("\n\n");
             } else {
@@ -686,7 +693,7 @@ public class PlayerVaults extends JavaPlugin {
         private int meow;
         private String spigotId;
 
-        public UpdateCheck(String pluginName, String pluginVersion, String serverName, String serverVersion) {
+        public UpdateCheck(final String pluginName, final String pluginVersion, final String serverName, final String serverVersion) {
             this.pluginName = pluginName;
             this.pluginVersion = pluginVersion;
             this.serverName = serverName;
@@ -733,7 +740,7 @@ public class PlayerVaults extends JavaPlugin {
 
     private final Set<UUID> told = new HashSet<>();
 
-    public void updateNotification(Player player) {
+    public void updateNotification(final Player player) {
         if (updateResponse == null || !player.hasPermission(Permission.ADMIN)) {
             return;
         }
@@ -752,12 +759,12 @@ public class PlayerVaults extends JavaPlugin {
         }
     }
 
-    public <T extends Throwable> T addException(T t) {
+    public <T extends Throwable> T addException(final T t) {
         if (this.getConf().isDebug()) {
-            StringBuilder builder = new StringBuilder();
+            final StringBuilder builder = new StringBuilder();
             builder.append(ZonedDateTime.now(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("uuuu/MM/dd HH:mm:ss"))).append('\n');
-            StringWriter stringWriter = new StringWriter();
-            PrintWriter printWriter = new PrintWriter(stringWriter);
+            final StringWriter stringWriter = new StringWriter();
+            final PrintWriter printWriter = new PrintWriter(stringWriter);
             t.printStackTrace(printWriter);
             builder.append(stringWriter.toString());
             this.exceptions.add(builder.toString());

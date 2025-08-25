@@ -26,26 +26,31 @@ import com.drtshock.playervaults.vaultmanagement.VaultViewInfo;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabExecutor;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.permissions.PermissionAttachmentInfo;
 
-public class VaultCommand implements CommandExecutor {
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+public class VaultCommand implements TabExecutor {
     private final PlayerVaults plugin;
 
-    public VaultCommand(PlayerVaults plugin) {
+    public VaultCommand(final PlayerVaults plugin) {
         this.plugin = plugin;
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(final CommandSender sender, final Command command, final String label, final String[] args) {
         if (VaultOperations.isLocked()) {
             this.plugin.getTL().locked().title().send(sender);
             return true;
         }
 
-        if (sender instanceof Player player) {
+        if (sender instanceof final Player player) {
             if (PlayerVaults.getInstance().getInVault().containsKey(player.getUniqueId().toString())) {
                 // don't let them open another vault.
                 return true;
@@ -64,13 +69,13 @@ public class VaultCommand implements CommandExecutor {
                     }
 
                     if ("list".equals(args[1])) {
-                        String target = getTarget(args[0]);
-                        YamlConfiguration file = VaultManager.getInstance().getPlayerVaultFile(target, false);
+                        final String target = getTarget(args[0]);
+                        final YamlConfiguration file = VaultManager.getInstance().getPlayerVaultFile(target, false);
                         if (file == null) {
                             this.plugin.getTL().vaultDoesNotExist().title().send(sender);
                         } else {
-                            StringBuilder sb = new StringBuilder();
-                            for (String key : file.getKeys(false)) {
+                            final StringBuilder sb = new StringBuilder();
+                            for (final String key : file.getKeys(false)) {
                                 sb.append(key.replace("vault", "")).append(" ");
                             }
 
@@ -79,15 +84,15 @@ public class VaultCommand implements CommandExecutor {
                         break;
                     }
 
-                    int number;
+                    final int number;
                     try {
                         number = Integer.parseInt(args[1]);
-                    } catch (NumberFormatException e) {
+                    } catch (final NumberFormatException e) {
                         this.plugin.getTL().mustBeNumber().title().send(sender);
                         return true;
                     }
 
-                    String target = getTarget(args[0]);
+                    final String target = getTarget(args[0]);
 
                     if (VaultOperations.openOtherVault(player, target, args[1])) {
                         PlayerVaults.getInstance().getInVault().put(player.getUniqueId().toString(), new VaultViewInfo(target, number));
@@ -105,15 +110,41 @@ public class VaultCommand implements CommandExecutor {
         return true;
     }
 
-    private String getTarget(String name) {
-        String target = name;
+    private String getTarget(final String name) {
+        final String target;
         OfflinePlayer searchPlayer = Bukkit.getPlayerExact(name);
         if (searchPlayer == null) {
             searchPlayer = Bukkit.getOfflinePlayer(name);
         }
-        if (searchPlayer != null) {
-            target = searchPlayer.getUniqueId().toString();
-        }
+        target = searchPlayer.getUniqueId().toString();
         return target;
+    }
+
+    @Override
+    public List<String> onTabComplete(final CommandSender sender, final Command command, final String label, final String[] args) {
+
+        if (args.length == 1 && sender instanceof final Player player) {
+            return getAvailableVaults(player).stream()
+                    .filter(s -> s.toLowerCase(Locale.ROOT).startsWith(args[0].toLowerCase(Locale.ROOT)))
+                    .toList();
+        }
+
+        return List.of();
+    }
+
+    List<String> getAvailableVaults(final Player player) {
+        final List<String> vaults = new ArrayList<>(10);
+        for (final PermissionAttachmentInfo permission : player.getEffectivePermissions()) {
+            final String perm = permission.getPermission();
+            if (perm.startsWith("playervaults.amount.")) {
+                final String number = perm.replace("playervaults.amount.", "");
+                try {
+                    final int vaultNumber = Integer.parseInt(number);
+                    vaults.add(String.valueOf(vaultNumber));
+                } catch (final NumberFormatException ignored) {
+                }
+            }
+        }
+        return vaults;
     }
 }
