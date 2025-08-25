@@ -14,7 +14,7 @@
 
     <build>
         <defaultGoal>clean install</defaultGoal>
-        <finalName>PlayerVaultsX</finalName>
+        <finalName>PlayerVaultsX-${project.version}</finalName>
         <resources>
             <resource>
                 <filtering>true</filtering>
