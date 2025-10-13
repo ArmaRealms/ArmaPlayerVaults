@@ -32,11 +32,12 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.PermissionAttachmentInfo;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 public class VaultCommand implements TabExecutor {
+    private static final String VAULT_AMOUNT_PERMISSION = "playervaults.amount.";
     private final PlayerVaults plugin;
 
     public VaultCommand(final PlayerVaults plugin) {
@@ -132,19 +133,21 @@ public class VaultCommand implements TabExecutor {
         return List.of();
     }
 
-    List<String> getAvailableVaults(final Player player) {
-        final List<String> vaults = new ArrayList<>(10);
-        for (final PermissionAttachmentInfo permission : player.getEffectivePermissions()) {
-            final String perm = permission.getPermission();
-            if (perm.startsWith("playervaults.amount.")) {
-                final String number = perm.replace("playervaults.amount.", "");
-                try {
-                    final int vaultNumber = Integer.parseInt(number);
-                    vaults.add(String.valueOf(vaultNumber));
-                } catch (final NumberFormatException ignored) {
-                }
-            }
-        }
-        return vaults;
+    private List<String> getAvailableVaults(final Player player) {
+        return player.getEffectivePermissions().stream()
+                .map(PermissionAttachmentInfo::getPermission)
+                .filter(s -> s.startsWith(VAULT_AMOUNT_PERMISSION))
+                .map(s -> {
+                    try {
+                        return Integer.parseInt(s.substring(VAULT_AMOUNT_PERMISSION.length()));
+                    } catch (final NumberFormatException ignored) {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .filter(i -> i > 0)
+                .distinct()
+                .map(String::valueOf)
+                .toList();
     }
 }
