@@ -35,17 +35,18 @@ import com.drtshock.playervaults.placeholder.Papi;
 import com.drtshock.playervaults.tasks.Cleanup;
 import com.drtshock.playervaults.util.ComponentDispatcher;
 import com.drtshock.playervaults.util.Permission;
+import com.drtshock.playervaults.util.WildcardKey;
 import com.drtshock.playervaults.vaultmanagement.EconomyOperations;
 import com.drtshock.playervaults.vaultmanagement.VaultManager;
 import com.drtshock.playervaults.vaultmanagement.VaultViewInfo;
 import com.google.gson.Gson;
-import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Registry;
 import org.bukkit.block.data.type.Vault;
@@ -104,9 +105,12 @@ public class PlayerVaults extends JavaPlugin {
     // VaultViewInfo - Inventory
     private final HashMap<String, Inventory> openInventories = new HashMap<>();
     private final Set<Material> blockedMats = new HashSet<>();
+    private final Set<WildcardKey> models = new HashSet<>();
     private final Set<Enchantment> blockedEnchs = new HashSet<>();
     private boolean blockWithModelData = false;
     private boolean blockWithoutModelData = false;
+    private boolean blockWithModel = false;
+    private boolean blockWithoutModel = false;
     private boolean useVault;
     private YamlConfiguration signs;
     private File signsFile;
@@ -420,22 +424,38 @@ public class PlayerVaults extends JavaPlugin {
 
         // Clear just in case this is a reload.
         blockedMats.clear();
+        models.clear();
         blockedEnchs.clear();
         this.blockWithModelData = false;
         this.blockWithoutModelData = false;
+        this.blockWithModel = false;
+        this.blockWithoutModel = false;
         if (getConf().getItemBlocking().isEnabled()) {
             for (final String s : getConf().getItemBlocking().getList()) {
                 if (s.equalsIgnoreCase("BLOCK_ALL_WITH_CUSTOM_MODEL_DATA")) {
                     this.blockWithModelData = true;
+                    continue;
                 }
                 if (s.equalsIgnoreCase("BLOCK_ALL_WITHOUT_CUSTOM_MODEL_DATA")) {
                     this.blockWithoutModelData = true;
+                    continue;
+                }
+                if (s.equalsIgnoreCase("BLOCK_ALL_WITH_CUSTOM_MODEL")) {
+                    this.blockWithModel = true;
+                    continue;
+                }
+                if (s.equalsIgnoreCase("BLOCK_ALL_WITHOUT_CUSTOM_MODEL")) {
+                    this.blockWithoutModel = true;
+                    continue;
                 }
                 final Material mat = Material.matchMaterial(s);
                 if (mat != null) {
                     blockedMats.add(mat);
                     getLogger().log(Level.INFO, "Added {0} to list of blocked materials.", mat.name());
                 }
+            }
+            for (String s : getConf().getItemBlocking().getModelList()) {
+                this.models.add(WildcardKey.of(s));
             }
             boolean badEnch = false;
             for (final String s : getConf().getItemBlocking().getEnchantmentsBlocked()) {
@@ -616,6 +636,10 @@ public class PlayerVaults extends JavaPlugin {
         return blockedMats.contains(mat);
     }
 
+    public boolean isModelMatch(NamespacedKey model) {
+        return this.models.stream().anyMatch(wcKey -> wcKey.matches(model));
+    }
+
     public boolean isBlockWithModelData() {
         return this.blockWithModelData;
     }
@@ -624,8 +648,16 @@ public class PlayerVaults extends JavaPlugin {
         return this.blockWithoutModelData;
     }
 
-    public Set<Enchantment> isEnchantmentBlocked(final ItemStack item) {
-        final Set<Enchantment> enchantments = new HashSet<>(item.getEnchantments().keySet());
+    public boolean isBlockWithModel() {
+        return blockWithModel;
+    }
+
+    public boolean isBlockWithoutModel() {
+        return blockWithoutModel;
+    }
+
+    public Set<Enchantment> isEnchantmentBlocked(ItemStack item) {
+        Set<Enchantment> enchantments = new HashSet<>(item.getEnchantments().keySet());
         enchantments.retainAll(this.blockedEnchs);
         return enchantments;
     }

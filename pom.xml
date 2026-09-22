@@ -4,7 +4,7 @@
 
     <groupId>com.drtshock</groupId>
     <artifactId>PlayerVaultsX</artifactId>
-    <version>4.4.13-SNAPSHOT</version>
+    <version>4.4.15-SNAPSHOT</version>
     <name>PlayerVaultsX</name>
     <url>https://www.spigotmc.org/resources/51204/</url>
 
@@ -190,7 +190,7 @@
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
-            <version>1.21.10-R0.1-SNAPSHOT</version>
+            <version>1.21.11-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

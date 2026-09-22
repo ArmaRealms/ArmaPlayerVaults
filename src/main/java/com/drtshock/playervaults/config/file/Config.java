@@ -34,12 +34,20 @@ public class Config {
                  If you don't know material names: https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Material.html
                 
                 Also, if you add "BLOCK_ALL_WITH_CUSTOM_MODEL_DATA" or "BLOCK_ALL_WITHOUT_CUSTOM_MODEL_DATA"
-                 then either all items with custom model data will be blocked, or all items without custom model data will be blocked.""")
+                 then either all items with custom model data will be blocked, or all items without custom model data will be blocked.
+                
+                Also, if you add "BLOCK_ALL_WITH_CUSTOM_MODEL" or "BLOCK_ALL_WITHOUT_CUSTOM_MODEL"
+                 then either all items with a custom model will be blocked, or all items without a custom model will be blocked.""")
         private List<String> list = new ArrayList<>() {
             {
                 this.add("PUMPKIN");
             }
         };
+
+        @Comment("List models (* for wildcard) you wish to block. Toggle modelListWhitelistInstead to make it a whitelist, blocking anything not on it.")
+        private List<String> modelList = new ArrayList<>();
+
+        private boolean modelListWhitelistInstead = false;
 
         @Comment("Enchantments to block from entering a vault at all.")
         private List<String> enchantmentsBlocked = new ArrayList<>();
@@ -60,6 +68,17 @@ public class Config {
                 this.enchantmentsBlocked = new ArrayList<>();
             }
             return Collections.unmodifiableList(this.enchantmentsBlocked);
+        }
+
+        public boolean isModelListWhitelistInstead() {
+            return modelListWhitelistInstead;
+        }
+
+        public List<String> getModelList() {
+            if (this.modelList == null) {
+                this.modelList = new ArrayList<>();
+            }
+            return Collections.unmodifiableList(this.modelList);
         }
     }
 

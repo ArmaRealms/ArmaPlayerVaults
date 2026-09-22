@@ -31,6 +31,8 @@ public class BlacklistedItemEvent extends Event implements Cancellable {
         ENCHANTMENT,
         HAS_MODEL_DATA,
         HAS_NO_MODEL_DATA,
+        HAS_MODEL,
+        HAS_NO_MODEL,
         TYPE;
     }
 

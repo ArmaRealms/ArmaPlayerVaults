@@ -198,6 +198,10 @@ public class Listeners implements Listener {
     }
 
     private boolean isBlocked(Player player, ItemStack item, VaultViewInfo info) {
+        if (!PlayerVaults.getInstance().getConf().getItemBlocking().isEnabled()) {
+            return false;
+        }
+
         List<BlacklistedItemEvent.Reason> reasons = new ArrayList<>();
         Map<BlacklistedItemEvent.Reason, Translation.TL.Builder> responses = new HashMap<>();
         if (PlayerVaults.getInstance().isBlockWithModelData() && ((item.getItemMeta() instanceof ItemMeta i) && i.hasCustomModelData())) {
@@ -208,10 +212,30 @@ public class Listeners implements Listener {
             reasons.add(BlacklistedItemEvent.Reason.HAS_NO_MODEL_DATA);
             responses.put(BlacklistedItemEvent.Reason.HAS_NO_MODEL_DATA, this.plugin.getTL().blockedItemWithoutModelData().title());
         }
+
+        if (PlayerVaults.getInstance().isBlockWithModel() && ((item.getItemMeta() instanceof ItemMeta i) && i.hasItemModel())) {
+            reasons.add(BlacklistedItemEvent.Reason.HAS_MODEL);
+            responses.put(BlacklistedItemEvent.Reason.HAS_MODEL, this.plugin.getTL().blockedItemWithModelData().title());
+        }
+        if (PlayerVaults.getInstance().isBlockWithoutModel() && !((item.getItemMeta() instanceof ItemMeta i) && i.hasItemModel())) {
+            reasons.add(BlacklistedItemEvent.Reason.HAS_NO_MODEL);
+            responses.put(BlacklistedItemEvent.Reason.HAS_NO_MODEL, this.plugin.getTL().blockedItemWithoutModelData().title());
+        }
+
+        if (!PlayerVaults.getInstance().getConf().getItemBlocking().getModelList().isEmpty()) {
+            boolean matches = (item.getItemMeta() instanceof ItemMeta i) && i.hasItemModel() && PlayerVaults.getInstance().isModelMatch(i.getItemModel());
+            if (PlayerVaults.getInstance().getConf().getItemBlocking().isModelListWhitelistInstead()) {
+                return !matches;
+            } else {
+                return matches;
+            }
+        }
+
         if (PlayerVaults.getInstance().isBlockedMaterial(item.getType())) {
             reasons.add(BlacklistedItemEvent.Reason.TYPE);
             responses.put(BlacklistedItemEvent.Reason.TYPE, this.plugin.getTL().blockedItem().title().with("item", item.getType().name()));
         }
+
         Set<Enchantment> ench = PlayerVaults.getInstance().isEnchantmentBlocked(item);
         if (!ench.isEmpty()) {
             reasons.add(BlacklistedItemEvent.Reason.ENCHANTMENT);
